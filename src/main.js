@@ -1,240 +1,418 @@
-import '@fontsource/be-vietnam-pro/vietnamese-400.css';
-import '@fontsource/be-vietnam-pro/vietnamese-500.css';
-import '@fontsource/be-vietnam-pro/latin-400.css';
-import '@fontsource/be-vietnam-pro/latin-500.css';
-import '@fontsource/cormorant-garamond/vietnamese-400.css';
-import '@fontsource/cormorant-garamond/vietnamese-400-italic.css';
-import '@fontsource/cormorant-garamond/latin-400.css';
-import '@fontsource/cormorant-garamond/latin-400-italic.css';
-import './style.css';
-import { gift } from './config.js';
-import { gardenMarkup } from './garden.js';
-import flowerIcon from '@tabler/icons/outline/flower.svg?raw';
-import heartIcon from '@tabler/icons/outline/heart.svg?raw';
-import starIcon from '@tabler/icons/outline/star.svg?raw';
-import sparkleIcon from '@tabler/icons/outline/sparkles.svg?raw';
-import mailIcon from '@tabler/icons/outline/mail.svg?raw';
-import photoIcon from '@tabler/icons/outline/photo.svg?raw';
-import musicIcon from '@tabler/icons/outline/music.svg?raw';
-import muteIcon from '@tabler/icons/outline/volume-off.svg?raw';
-import settingsIcon from '@tabler/icons/outline/adjustments-horizontal.svg?raw';
-import closeIcon from '@tabler/icons/outline/x.svg?raw';
-import plusIcon from '@tabler/icons/outline/plus.svg?raw';
-import arrowIcon from '@tabler/icons/outline/arrow-up-right.svg?raw';
+import "@fontsource/be-vietnam-pro/vietnamese-400.css";
+import "@fontsource/be-vietnam-pro/latin-400.css";
+import "@fontsource/cormorant-garamond/vietnamese-400.css";
+import "@fontsource/cormorant-garamond/vietnamese-400-italic.css";
+import "@fontsource/cormorant-garamond/latin-400.css";
+import "@fontsource/cormorant-garamond/latin-400-italic.css";
+import "./style.css";
+import { gift } from "./config.js";
+import { gardenMarkup } from "./garden.js";
+import flower from "@tabler/icons/outline/plant-2.svg?raw";
+import sparkle from "@tabler/icons/outline/sparkles.svg?raw";
+import music from "@tabler/icons/outline/music.svg?raw";
+import replay from "@tabler/icons/outline/rotate-clockwise.svg?raw";
+import arrow from "@tabler/icons/outline/arrow-up-right.svg?raw";
+import close from "@tabler/icons/outline/x.svg?raw";
+import sun from "@tabler/icons/outline/sun.svg?raw";
 
-const icons = { heart: heartIcon, flower: flowerIcon, star: starIcon };
-let messages = [...gift.messages], symbol = gift.symbol;
-let storageAvailable = true;
-try {
-  const saved = JSON.parse(localStorage.getItem('garden-gift-v1') || 'null');
-  if (saved && Array.isArray(saved.messages)) {
-    const valid = saved.messages.filter(s => typeof s === 'string' && s.trim()).slice(0, 12).map(s => s.slice(0, 100));
-    if (valid.length) messages = valid;
-    if (Object.hasOwn(icons, saved.symbol)) symbol = saved.symbol;
-  }
-} catch { storageAvailable = false; }
-const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-let opened = false, ready = false, musicOn = false, musicDesired = false;
-let resumeMusic = false, musicFailed = false;
-const audio = new Audio(gift.music);
-audio.loop = true; audio.volume = .35; audio.preload = 'none';
-const app = document.querySelector('#app');
-app.innerHTML = `
-  <main class="world" id="world" aria-label="Khu vườn dành cho em">
-    <canvas id="fireflies" aria-hidden="true"></canvas>
-    <div class="sky-glow" aria-hidden="true"></div>
-    <header class="scene-header">
-      <div class="wordmark">${flowerIcon}<span>một chút thương</span><span class="wordmark-dot"></span></div>
-      <button class="sound-button" id="sound" aria-label="Bật nhạc nền" aria-pressed="false">${musicIcon}<span>Nhạc đang tắt</span><i class="sound-bars" aria-hidden="true"><b></b><b></b><b></b></i></button>
-    </header>
-    <div class="scene-heading"><p class="eyebrow">DÀNH RIÊNG CHO NGƯỜI MÌNH THƯƠNG</p><h1>Một vườn hoa<br><em>dành cho em.</em></h1><p class="scene-subtitle">Có những dịu dàng, chỉ muốn gửi riêng em.</p></div>
-    <div class="garden-stage">${gardenMarkup()}</div>
-    <div class="memories" id="memories" aria-label="Những kỷ niệm"></div>
-    <div class="floating-messages" id="floating-messages" aria-hidden="true"></div>
-    <aside class="garden-menu" aria-label="Menu khu vườn">
-      <div class="menu-options" id="menu-options" hidden>
-        <button data-action="letter" aria-label="Đọc lời nhắn">${mailIcon}<span>Lời nhắn</span></button>
-        <button data-action="gallery" aria-label="Xem ảnh kỷ niệm">${photoIcon}<span>Kỷ niệm</span></button>
-        <button data-action="music" id="menu-sound" aria-label="Bật nhạc nền" aria-pressed="false">${musicIcon}<span>Nhạc nền</span></button>
-        <button data-action="settings" aria-label="Mở cài đặt">${settingsIcon}<span>Cài đặt</span></button>
-      </div>
-      <button class="menu-trigger" id="menu-trigger" aria-label="Mở menu khu vườn" aria-expanded="false" aria-controls="menu-options">${plusIcon}</button>
-      <span class="menu-caption">Một chút nữa</span>
-    </aside>
-    <div class="scene-note"><span class="note-line"></span><p>Hoa nở vì em.<br><span>Và mọi dịu dàng cũng thế.</span></p></div>
-    <div class="touch-hint">${sparkleIcon}<span>Chạm nhẹ, gửi một chút thương</span></div>
-    <div class="scene-vignette" aria-hidden="true"></div>
-    <section class="welcome" id="welcome" aria-labelledby="welcome-title">
-      <div class="welcome-stars" aria-hidden="true">✦</div>
-      <div class="welcome-card">
-        <div class="gift-seal" aria-hidden="true">${flowerIcon}</div>
-        <p class="eyebrow">MỘT MÓN QUÀ NHỎ · MỘT CHÚT THƯƠNG</p>
-        <h2 id="welcome-title">Có một món quà<br><em>dành cho em.</em></h2>
-        <p class="welcome-copy">Một chút dịu dàng đã được gieo ở đây.<br>Chỉ chờ em ghé qua, để nở thành hoa.</p>
-        <button class="open-gift" id="open-gift">Mở quà <span>${arrowIcon}</span></button>
-        <p class="welcome-footnote">${musicIcon} Một chút nhạc sẽ làm khoảnh khắc đẹp hơn</p>
-      </div>
-      <p class="welcome-sign">Gửi em, bằng tất cả dịu dàng.</p>
-    </section>
+const escape = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+document.title = gift.title;
+document.querySelector("#app").innerHTML = `
+  <main class="world" id="world" aria-label="Vườn tulip và những lời chúc">
+    <div class="ambient-glow" aria-hidden="true"></div><div class="moonlight" aria-hidden="true"></div>
+    <div class="night-moon" aria-hidden="true"><span></span></div>
+    <div class="light-column" aria-hidden="true"></div>
+    <canvas id="atmosphere" aria-hidden="true"></canvas>
+    <header class="scene-header"><div class="wordmark">${flower}<span>một chút an yên</span></div><button class="sound-button" id="sound" aria-label="Bật nhạc nền" aria-pressed="false">${music}<span>Nhạc nền</span><i class="sound-bars" aria-hidden="true"><b></b><b></b><b></b></i></button></header>
+    <div class="scene-heading"><p class="eyebrow">MỘT VƯỜN TULIP · MỘT LỜI CHÚC NHỎ</p><h1>${escape(gift.heading)}<br><em>${escape(gift.emphasis)}</em></h1><p class="subtitle">${escape(gift.subtitle)}</p></div>
+    <div class="garden-floor" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="garden-stage" id="garden-stage">${gardenMarkup()}</div>
+    <div class="wish-notes" aria-hidden="true">${gift.wishes.map((wish, i) => `<div class="wish-note wish-${i}" style="--note-delay:${i * 0.42}s;--phase:-${i * 2.8}s;--wish-index:${i}"><span class="wish-spark">✧</span><span>${escape(wish)}</span></div>`).join("")}</div>
+    <div class="bottom-mist" aria-hidden="true"></div><div class="vignette" aria-hidden="true"></div><div class="film-grain" aria-hidden="true"></div>
+    <div class="scene-controls"><button class="quiet-button" id="replay">${replay}<span>Xem hoa nở</span></button><p class="touch-hint">${sparkle}<span>Chạm nhẹ để thắp sáng khu vườn</span></p><button class="quiet-button greeting-button" id="read-wish"><span>Đọc lời chúc</span>${arrow}</button></div>
+    <section class="welcome" id="welcome" aria-labelledby="welcome-title"><div class="welcome-botanical" aria-hidden="true">${gardenMarkup("intro-")}</div><div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div><div class="welcome-card"><div class="gift-seal">${flower}</div><p class="eyebrow">DỪNG LẠI MỘT CHÚT, HÍT THỞ THẬT SÂU</p><h2 id="welcome-title">Một chút bình yên,<br><em>gửi đến bạn.</em></h2><p class="welcome-copy">Có một khu vườn nhỏ đang chờ bạn ghé qua.<br>Cùng vài lời chúc, cho một ngày thật đẹp.</p><button class="open-gift" id="open-gift">Ghé khu vườn <span>${arrow}</span></button><p class="welcome-footnote">${music} Bật một chút nhạc, tận hưởng một chút yên.</p></div><p class="welcome-sign">Mong mọi điều tốt lành sẽ đến với bạn.</p></section>
   </main>
-  <dialog id="gift-dialog" aria-labelledby="dialog-title"><div class="dialog-content" id="dialog-content"></div></dialog>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-`;
+  <dialog id="wish-dialog" aria-labelledby="dialog-title"><button class="dialog-close" aria-label="Đóng lời chúc">${close}</button><div class="dialog-emblem">${sun}</div><p class="eyebrow">MỘT LỜI CHÚC NHỎ GỬI BẠN</p><h2 id="dialog-title">Mọi điều tốt lành.</h2><div class="greeting-copy">${gift.greeting.map((line) => `<p>${escape(line)}</p>`).join("")}</div><div class="little-flower" aria-hidden="true">${flower}</div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>`;
 
-const $ = s => document.querySelector(s);
-const world = $('#world'), dialog = $('#gift-dialog');
-$('.scene-header').inert = true;
-$('.garden-menu').inert = true;
-$('#memories').inert = true;
-let lastFocus;
-const escape = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(message) {
-  $('#toast').textContent = message;
-  $('#toast').classList.add('visible');
-  clearTimeout(toast.timeout);
-  toast.timeout = setTimeout(() => $('#toast').classList.remove('visible'), 3500);
+const $ = (selector) => document.querySelector(selector);
+const world = $("#world"),
+  dialog = $("#wish-dialog"),
+  stage = $("#garden-stage");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+const audio = new Audio(gift.music);
+audio.loop = true;
+audio.volume = 0.32;
+audio.preload = "none";
+let opened = false,
+  ready = false,
+  musicOn = false,
+  musicDesired = false,
+  resumeMusic = false,
+  musicFailed = false;
+let bloomTimer, toastTimer, lastFocus;
+$(".scene-header").inert = true;
+$(".scene-controls").inert = true;
+$(".scene-heading").inert = true;
+function toast(text) {
+  $("#toast").textContent = text;
+  $("#toast").classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("#toast").classList.remove("visible"), 3300);
 }
-function renderMemories() {
-  $('#memories').innerHTML = gift.photos.map((photo, i) => `<button class="memory memory-${i}" style="--rotation:${[-12,9,-7,13,-9][i]}deg;--float-delay:-${i*2.1}s;--appear-delay:${i*.45}s" data-photo="${i}" aria-label="Xem ảnh: ${escape(photo.caption)}"><span class="photo-paper"><img src="${escape(photo.src)}" alt="${escape(photo.alt)}" width="200" height="240"><span>${escape(photo.caption)}</span></span></button>`).join('');
-}
-function renderMessages() {
-  $('#floating-messages').innerHTML = Array.from({length: 5}, (_,i) => `<span class="floating-message message-${i}" style="--float-delay:-${i*3.2}s;--appear-delay:${i*.6}s">${icons[symbol]}<span>${escape(messages[i%messages.length])}</span></span>`).join('');
-}
-renderMemories(); renderMessages();
 function updateMusic() {
-  $('#sound').setAttribute('aria-pressed', String(musicOn));
-  $('#menu-sound').setAttribute('aria-pressed', String(musicOn));
-  $('#sound').setAttribute('aria-label', musicOn ? 'Tắt nhạc nền' : 'Bật nhạc nền');
-  $('#menu-sound').setAttribute('aria-label', musicOn ? 'Tắt nhạc nền' : 'Bật nhạc nền');
-  $('#sound').querySelector('span').textContent = musicOn ? 'Nhạc đang bật' : 'Nhạc đang tắt';
-  $('#sound').classList.toggle('is-playing', musicOn);
+  const button = $("#sound");
+  button.setAttribute("aria-pressed", String(musicOn));
+  button.setAttribute("aria-label", musicOn ? "Tắt nhạc nền" : "Bật nhạc nền");
+  button.classList.toggle("is-playing", musicOn);
+  button.querySelector("span").textContent = musicOn
+    ? "Nhạc đang bật"
+    : "Nhạc nền";
 }
 async function playMusic(quiet = false) {
-  if (musicFailed) { if (!quiet) toast('Chưa tải được nhạc. Bạn vẫn có thể khám phá khu vườn.'); return; }
+  if (musicFailed) {
+    if (!quiet) toast("Chưa tải được nhạc. Bạn vẫn có thể ngắm hoa nhé.");
+    return;
+  }
   musicDesired = true;
-  try { await audio.play(); if (musicDesired && !document.hidden) musicOn = true; else audio.pause(); }
-  catch { musicDesired = false; if (!quiet) toast('Chưa phát được nhạc. Hãy chạm lại nút nhạc để thử.'); }
+  try {
+    await audio.play();
+    if (musicDesired && !document.hidden) musicOn = true;
+    else audio.pause();
+  } catch {
+    musicDesired = false;
+    if (!quiet) toast("Chạm lại nút nhạc để thử phát nhé.");
+  }
   updateMusic();
 }
-function stopMusic() { musicDesired = false; audio.pause(); musicOn = false; resumeMusic = false; updateMusic(); }
-function toggleMusic() { if (musicOn || musicDesired) stopMusic(); else playMusic(); }
-audio.addEventListener('error', () => { musicFailed = true; musicOn = false; musicDesired = false; updateMusic(); if (opened) toast('Không tải được nhạc. Khu vườn vẫn đang chờ em.'); });
-$('#sound').addEventListener('click', toggleMusic);
-$('#open-gift').addEventListener('click', () => {
+function stopMusic() {
+  musicDesired = false;
+  musicOn = false;
+  resumeMusic = false;
+  audio.pause();
+  updateMusic();
+}
+audio.addEventListener("error", () => {
+  musicFailed = true;
+  musicDesired = false;
+  musicOn = false;
+  updateMusic();
+  if (opened) toast("Chưa tải được nhạc. Khu vườn vẫn đang nở hoa.");
+});
+$("#sound").addEventListener("click", () =>
+  musicOn || musicDesired ? stopMusic() : playMusic(),
+);
+function startGarden() {
+  clearTimeout(bloomTimer);
+  world.classList.remove("growing", "ready");
+  ready = false;
+  // Restart the finite opening sequence; perpetual wind lives on separate groups.
+  void world.offsetWidth;
+  world.classList.add("opened", "growing");
+  bloomTimer = setTimeout(
+    () => {
+      ready = true;
+      world.classList.add("ready");
+    },
+    reduced.matches ? 50 : 5400,
+  );
+}
+$("#open-gift").addEventListener("click", () => {
   if (opened) return;
-  opened = true; world.classList.add('opened');
-  $('#welcome').inert = true;
+  opened = true;
+  $("#welcome").inert = true;
+  $(".scene-heading").inert = false;
+  startGarden();
   playMusic(true);
-  setTimeout(() => { $('#welcome').hidden = true; $('.scene-header').inert = false; $('.garden-menu').inert = false; $('#menu-trigger').focus({preventScroll:true}); }, reduced.matches ? 0 : 950);
-  setTimeout(() => { ready = true; world.classList.add('ready'); $('#memories').inert = false; }, reduced.matches ? 250 : 5100);
+  setTimeout(
+    () => {
+      $("#welcome").hidden = true;
+      $(".scene-header").inert = false;
+      $(".scene-controls").inert = false;
+      $("#read-wish").focus({ preventScroll: true });
+    },
+    reduced.matches ? 0 : 1000,
+  );
 });
-const menuTrigger = $('#menu-trigger');
-menuTrigger.addEventListener('click', () => {
-  const expanded = menuTrigger.getAttribute('aria-expanded') === 'true';
-  menuTrigger.setAttribute('aria-expanded', String(!expanded));
-  menuTrigger.setAttribute('aria-label', expanded ? 'Mở menu khu vườn' : 'Đóng menu khu vườn');
-  $('#menu-options').hidden = expanded;
+$("#replay").addEventListener("click", () => {
+  startGarden();
+  if (reduced.matches)
+    toast("Hoa đã nở. Thiết bị đang bật chế độ giảm chuyển động.");
 });
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !dialog.open && !$('#menu-options').hidden) {
-    menuTrigger.click(); menuTrigger.focus();
-  }
+$("#read-wish").addEventListener("click", () => {
+  lastFocus = document.activeElement;
+  dialog.showModal();
+  dialog.querySelector(".dialog-close").focus({ preventScroll: true });
 });
-function modal(content, kind = '') {
-  if (!dialog.open) lastFocus = document.activeElement;
-  dialog.className = kind;
-  $('#dialog-content').innerHTML = `<button class="dialog-close" data-close aria-label="Đóng cửa sổ">${closeIcon}</button>${content}`;
-  if (!dialog.open) dialog.showModal();
-  dialog.querySelector('[data-close]').focus({preventScroll:true});
-}
-function closeModal() { dialog.close(); }
-dialog.addEventListener('close', () => { if (lastFocus?.isConnected) lastFocus.focus({preventScroll:true}); });
-dialog.addEventListener('click', event => {
-  if (event.target.closest('[data-close]')) closeModal();
-  if (event.target === dialog) {
-    const r = dialog.getBoundingClientRect();
-    if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) closeModal();
-  }
-  const photo = event.target.closest('[data-photo]');
-  if (photo) showPhoto(Number(photo.dataset.photo));
-  const nav = event.target.closest('[data-next-photo]');
-  if (nav) showPhoto(Number(nav.dataset.nextPhoto));
+dialog
+  .querySelector(".dialog-close")
+  .addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", () =>
+  lastFocus?.focus({ preventScroll: true }),
+);
+dialog.addEventListener("click", (event) => {
+  if (event.target !== dialog) return;
+  const r = dialog.getBoundingClientRect();
+  if (
+    event.clientX < r.left ||
+    event.clientX > r.right ||
+    event.clientY < r.top ||
+    event.clientY > r.bottom
+  )
+    dialog.close();
 });
-function showLetter() {
-  modal(`<div class="letter-mark">${heartIcon}</div><p class="eyebrow">MẤY DÒNG GỬI ${escape(gift.recipient.toLocaleUpperCase('vi'))}</p><h2 id="dialog-title">${escape(gift.letterTitle)}</h2><div class="letter-body">${gift.letter.map(p => `<p>${escape(p)}</p>`).join('')}</div><p class="letter-sign">Thương em,<br><em>${escape(gift.sender)}</em></p>`, 'letter-dialog');
-}
-function showGallery() {
-  modal(`<p class="eyebrow">GIỮ LẠI NHỮNG DỊU DÀNG</p><h2 id="dialog-title">Những ngày có nhau.</h2><p class="dialog-intro">Những tấm hình nhỏ, những niềm vui thật lâu.</p><div class="gallery-grid">${gift.photos.map((p,i) => `<button data-photo="${i}" aria-label="Xem ảnh: ${escape(p.caption)}"><img src="${escape(p.src)}" alt="${escape(p.alt)}" width="300" height="360"><span>${escape(p.caption)}</span></button>`).join('')}</div><p class="sample-note">Ảnh phong cảnh mẫu · Có thể thay bằng ảnh của hai bạn.</p>`, 'gallery-dialog');
-}
-function showPhoto(index) {
-  const i = (index + gift.photos.length) % gift.photos.length, p = gift.photos[i];
-  modal(`<p class="eyebrow">MỘT MẢNH KỶ NIỆM · ${i+1} / ${gift.photos.length}</p><h2 id="dialog-title">${escape(p.caption)}</h2><img class="lightbox-image" src="${escape(p.src)}" alt="${escape(p.alt)}"><div class="photo-navigation"><button data-next-photo="${i-1}">← Ảnh trước</button><button data-next-photo="${i+1}">Ảnh sau →</button></div>`, 'photo-dialog');
-}
-function showSettings() {
-  modal(`<p class="eyebrow">MỘT CHÚT THEO Ý EM</p><h2 id="dialog-title">Chăm chút khu vườn.</h2><p class="dialog-intro">Những điều nhỏ xinh, để món quà là của riêng mình.</p><form id="settings-form"><fieldset><legend>Biểu tượng yêu thương</legend><div class="symbol-options">${Object.entries(icons).map(([key,svg]) => `<label><input type="radio" name="symbol" value="${key}" ${symbol===key?'checked':''}><span>${svg}${{heart:'Trái tim',flower:'Bông hoa',star:'Ngôi sao'}[key]}</span></label>`).join('')}</div></fieldset><label class="message-label" for="messages-input">Lời nhắn bay trong vườn<span>Mỗi dòng một lời thương · tối đa 12 dòng</span></label><textarea id="messages-input" name="messages" rows="6" maxlength="1211" required>${escape(messages.join('\n'))}</textarea><p class="form-error" id="form-error" role="alert"></p><p class="storage-note">Tùy chỉnh được lưu trên trình duyệt này.</p><div class="dialog-actions"><button type="button" class="secondary-button" data-close>Đóng</button><button type="submit" class="primary-button">Lưu thay đổi ${heartIcon}</button></div></form>`, 'settings-dialog');
-  $('#settings-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const next = $('#messages-input').value.split('\n').map(s => s.trim()).filter(Boolean);
-    if (!next.length) { $('#form-error').textContent = 'Hãy viết ít nhất một lời nhắn nhé.'; return; }
-    if (next.length > 12 || next.some(s => s.length > 100)) { $('#form-error').textContent = 'Tối đa 12 lời nhắn, mỗi lời không quá 100 ký tự.'; return; }
-    messages = next;
-    symbol = new FormData(event.target).get('symbol');
-    try { localStorage.setItem('garden-gift-v1', JSON.stringify({messages,symbol})); storageAvailable = true; } catch { storageAvailable = false; }
-    renderMessages(); closeModal();
-    toast(storageAvailable ? 'Đã giữ lại những lời thương của bạn.' : 'Đã áp dụng. Trình duyệt này chưa cho phép lưu tùy chỉnh.');
-  });
-}
-$('#menu-options').addEventListener('click', event => {
-  const action = event.target.closest('[data-action]')?.dataset.action;
-  ({letter:showLetter,gallery:showGallery,music:toggleMusic,settings:showSettings})[action]?.();
-});
-$('#memories').addEventListener('click', event => { const target = event.target.closest('[data-photo]'); if (target) showPhoto(Number(target.dataset.photo)); });
 
-// One shared, capped animation loop. It sleeps when the document is hidden.
-const canvas = $('#fireflies'), ctx = canvas.getContext('2d');
-let width = 0, height = 0, frame, lastTime = 0, elapsed = 0;
-let particles = [], bursts = [];
+// Atmospheric depth: distant stars, warm fireflies, airborne pollen, falling petals.
+// One 30fps loop, bounded particle counts, and no work while the tab is hidden.
+const canvas = $("#atmosphere"),
+  ctx = canvas.getContext("2d");
+let width = 0,
+  height = 0,
+  stars = [],
+  flies = [],
+  petals = [],
+  bursts = [],
+  ripples = [],
+  shooting = null;
+let frame = 0,
+  lastTime = 0,
+  time = 0,
+  lastShooting = 0,
+  pointer = { x: 0, y: 0 },
+  drift = { x: 0, y: 0 },
+  attractor = null;
 function resize() {
-  width = innerWidth; height = innerHeight;
+  width = innerWidth;
+  height = innerHeight;
   const dpr = Math.min(devicePixelRatio || 1, 1.5);
-  canvas.width = width*dpr; canvas.height = height*dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  particles = Array.from({length:width<600?38:85},(_,i) => ({x:Math.random()*width,y:Math.random()*height,phase:Math.random()*Math.PI*2,r:i%5===0?1.5:.5+Math.random()*.7,firefly:i%4===0}));
-  if (reduced.matches) paint(0);
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const small = width < 600;
+  stars = Array.from({ length: small ? 42 : 85 }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height * 0.85,
+    r: 0.3 + Math.random() * 0.65,
+    phase: Math.random() * 7,
+  }));
+  flies = Array.from({ length: small ? 18 : 32 }, (_, i) => ({
+    x: width * (0.16 + Math.random() * 0.68),
+    y: height * (0.28 + Math.random() * 0.64),
+    phase: Math.random() * 7,
+    r: 0.6 + Math.random() * 1.2,
+    depth: 0.4 + Math.random() * 0.7,
+    tint: i % 3,
+  }));
+  petals = Array.from({ length: small ? 4 : 7 }, (_, i) => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    phase: i * 1.9,
+    size: 3 + Math.random() * 3,
+    speed: 7 + Math.random() * 10,
+  }));
+  if (reduced.matches) paint(0, 0);
 }
-function paint(time) {
-  ctx.clearRect(0,0,width,height);
-  for (const p of particles) {
-    const t = reduced.matches?0:time;
-    const x=p.x+Math.sin(t*.0004+p.phase)*(p.firefly?24:4), y=p.y+Math.cos(t*.0003+p.phase)*15;
-    const alpha=p.firefly?.25+Math.sin(t*.001+p.phase)*.2:.12+Math.sin(t*.0005+p.phase)*.08;
-    ctx.fillStyle=p.firefly?`rgba(206,225,129,${alpha})`:`rgba(180,219,216,${alpha})`;
-    ctx.shadowBlur=p.firefly?10:0; ctx.shadowColor='#cbef7d';
-    ctx.beginPath();ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();
+function drawPetal(x, y, size, angle, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(0.45 + Math.abs(Math.sin(angle * 1.8)) * 0.55, 1);
+  ctx.globalAlpha = alpha;
+  const gradient = ctx.createLinearGradient(-size, -size, size, size);
+  gradient.addColorStop(0, "#f1cad9");
+  gradient.addColorStop(1, "#a06d91");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(0, size);
+  ctx.bezierCurveTo(-size * 1.4, 0, -size * 0.8, -size * 1.7, 0, -size);
+  ctx.bezierCurveTo(size * 0.9, -size * 0.6, size * 0.9, size * 0.2, 0, size);
+  ctx.fill();
+  ctx.restore();
+}
+function paint(t, dt) {
+  ctx.clearRect(0, 0, width, height);
+  for (const s of stars) {
+    const alpha = 0.16 + (Math.sin(t * 0.0007 + s.phase) + 1) * 0.13;
+    ctx.fillStyle = `rgba(190,213,207,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x + drift.x * 0.3, s.y + drift.y * 0.3, s.r, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.shadowBlur=0;
-  bursts = bursts.filter(p=>time-p.start<1200);
-  for(const p of bursts){
-    const progress=(time-p.start)/1200;
-    ctx.fillStyle=`rgba(247,201,224,${(1-progress)*.8})`;
-    ctx.beginPath();ctx.arc(p.x+Math.cos(p.angle)*progress*p.distance,p.y+Math.sin(p.angle)*progress*p.distance-progress*12,Math.max(.1,(1-progress)*2.5),0,Math.PI*2);ctx.fill();
+  for (const f of flies) {
+    let x =
+        f.x +
+        Math.sin(t * 0.00035 * f.depth + f.phase) * 32 +
+        drift.x * f.depth,
+      y = f.y + Math.cos(t * 0.0004 + f.phase) * 24;
+    if (attractor && opened && ready) {
+      const dx = attractor.x - x,
+        dy = attractor.y - y,
+        distance = Math.hypot(dx, dy);
+      if (distance < 180) {
+        const strength = (1 - distance / 180) * 0.22;
+        x += dx * strength;
+        y += dy * strength;
+      }
+    }
+    const alpha = 0.18 + (Math.sin(t * 0.0015 + f.phase) + 1) * 0.24;
+    const color =
+      f.tint === 0
+        ? "245,207,154"
+        : f.tint === 1
+          ? "218,231,157"
+          : "209,186,218";
+    ctx.fillStyle = `rgba(${color},${alpha})`;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = `rgba(${color},.7)`;
+    ctx.beginPath();
+    ctx.arc(x, y, f.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  if (opened && ready && !reduced.matches) {
+    for (const p of petals) {
+      p.y += dt * 0.001 * p.speed;
+      p.x += Math.sin(t * 0.0005 + p.phase) * dt * 0.006;
+      if (p.y > height + 20) {
+        p.y = -20;
+        p.x = Math.random() * width;
+      }
+      drawPetal(
+        p.x,
+        p.y,
+        p.size,
+        Math.sin(t * 0.0007 + p.phase) * 1.2,
+        0.18 + Math.sin(t * 0.001 + p.phase) * 0.06,
+      );
+    }
+    if (t - lastShooting > 14000) {
+      lastShooting = t;
+      shooting = {
+        x: width * (0.15 + Math.random() * 0.5),
+        y: height * 0.1,
+        start: t,
+      };
+    }
+    if (shooting) {
+      const p = (t - shooting.start) / 1100;
+      if (p > 1) shooting = null;
+      else {
+        const x = shooting.x + p * 130,
+          y = shooting.y + p * 65;
+        const g = ctx.createLinearGradient(x - 70, y - 35, x, y);
+        g.addColorStop(0, "#dfe9d700");
+        g.addColorStop(1, `rgba(226,236,208,${Math.sin(p * Math.PI) * 0.5})`);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x - 70, y - 35);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+  }
+  bursts = bursts.filter((p) => t - p.start < 1600);
+  for (const p of bursts) {
+    const q = (t - p.start) / 1600;
+    const x = p.x + Math.cos(p.angle) * p.distance * q,
+      y = p.y + Math.sin(p.angle) * p.distance * q - q * 20;
+    ctx.fillStyle = `rgba(245,222,184,${(1 - q) * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.1, (1 - q) * 2), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ripples = ripples.filter((r) => t - r.start < 1900);
+  for (const r of ripples) {
+    const q = (t - r.start) / 1900;
+    ctx.strokeStyle = `rgba(197,218,179,${(1 - q) * 0.2})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.ellipse(r.x, r.y, 8 + q * 95, 4 + q * 35, 0, 0, Math.PI * 2);
+    ctx.stroke();
   }
 }
-function tick(time) {
-  if(document.hidden || reduced.matches) return;
-  if(time-lastTime>=32){ elapsed+=Math.min(time-lastTime,40);lastTime=time;paint(elapsed); }
-  frame=requestAnimationFrame(tick);
+function tick(now) {
+  if (document.hidden || reduced.matches) return;
+  if (now - lastTime >= 32) {
+    const dt = Math.min(now - lastTime, 45);
+    time += dt;
+    lastTime = now;
+    drift.x += (pointer.x - drift.x) * 0.035;
+    drift.y += (pointer.y - drift.y) * 0.035;
+    stage.style.setProperty("--parallax-x", `${drift.x * 0.3}px`);
+    stage.style.setProperty("--parallax-y", `${drift.y * 0.15}px`);
+    paint(time, dt);
+  }
+  frame = requestAnimationFrame(tick);
 }
-resize();addEventListener('resize',resize);frame=requestAnimationFrame(tick);
-world.addEventListener('pointerdown',event=>{
-  if(!opened||!ready||reduced.matches||event.target.closest('button, aside, dialog'))return;
-  for(let i=0;i<12;i++)bursts.push({x:event.clientX,y:event.clientY,angle:Math.PI*2*i/12,distance:25+Math.random()*35,start:elapsed});
-  if(bursts.length>120)bursts=bursts.slice(-120);
+resize();
+addEventListener("resize", resize);
+frame = requestAnimationFrame(tick);
+world.addEventListener("pointermove", (event) => {
+  if (event.pointerType === "touch" || reduced.matches) return;
+  pointer.x = (event.clientX / width - 0.5) * 20;
+  pointer.y = (event.clientY / height - 0.5) * 14;
+  attractor = { x: event.clientX, y: event.clientY };
 });
-document.addEventListener('visibilitychange',()=>{
-  world.classList.toggle('sleeping',document.hidden);
+world.addEventListener("pointerleave", () => {
+  pointer.x = 0;
+  pointer.y = 0;
+  attractor = null;
+});
+world.addEventListener("pointerdown", (event) => {
+  if (
+    !opened ||
+    !ready ||
+    reduced.matches ||
+    event.target.closest("button,dialog")
+  )
+    return;
+  for (let i = 0; i < 18; i++)
+    bursts.push({
+      x: event.clientX,
+      y: event.clientY,
+      angle: (Math.PI * 2 * i) / 18,
+      distance: 25 + Math.random() * 70,
+      start: time,
+    });
+  if (bursts.length > 126) bursts = bursts.slice(-126);
+  ripples.push({ x: event.clientX, y: event.clientY, start: time });
+  if (ripples.length > 4) ripples = ripples.slice(-4);
+});
+document.addEventListener("visibilitychange", () => {
+  world.classList.toggle("sleeping", document.hidden);
   cancelAnimationFrame(frame);
-  if(document.hidden){resumeMusic=musicDesired;audio.pause();musicOn=false;updateMusic();}
-  else {lastTime=performance.now();if(!reduced.matches)frame=requestAnimationFrame(tick);if(resumeMusic)playMusic(true);}
+  if (document.hidden) {
+    resumeMusic = musicDesired;
+    audio.pause();
+    musicOn = false;
+    updateMusic();
+  } else {
+    lastTime = performance.now();
+    if (!reduced.matches) frame = requestAnimationFrame(tick);
+    if (resumeMusic) playMusic(true);
+  }
 });
-reduced.addEventListener('change',()=>{cancelAnimationFrame(frame);if(reduced.matches){paint(0);if(opened){ready=true;world.classList.add('ready');}}else{lastTime=performance.now();frame=requestAnimationFrame(tick);}});
+reduced.addEventListener("change", () => {
+  cancelAnimationFrame(frame);
+  if (reduced.matches) {
+    pointer.x = pointer.y = drift.x = drift.y = 0;
+    stage.style.setProperty("--parallax-x", "0px");
+    stage.style.setProperty("--parallax-y", "0px");
+    if (opened) {
+      ready = true;
+      world.classList.add("ready");
+    }
+    paint(0, 0);
+  } else {
+    lastTime = performance.now();
+    frame = requestAnimationFrame(tick);
+  }
+});

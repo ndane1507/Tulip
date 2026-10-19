@@ -1,62 +1,121 @@
-// Botanical illustration: each stem, leaf and petal remains independently animated.
-export function gardenMarkup() {
-  const leaves = [];
-  for (let i = 0; i < 23; i++) {
-    const side = i % 2 ? 1 : -1;
-    const x = 450 + Math.sin(i * 2.4) * 86;
-    const y = 850 - (i % 7) * 24;
-    const h = 80 + (i * 37) % 125;
-    const spread = side * (40 + (i * 29) % 105);
-    leaves.push(`<g class="foliage-grow" style="--delay:${1.25 + i * .055}s;transform-origin:${x}px ${y}px"><path d="M${x} ${y} C${x + spread * .15} ${y-h*.52},${x+spread*.38} ${y-h*.91},${x+spread} ${y-h} C${x+spread*1.26} ${y-h*.5},${x+spread*.55} ${y-h*.14},${x} ${y}Z" fill="url(#leaf${i%3})"/><path d="M${x} ${y} Q${x+spread*.42} ${y-h*.56} ${x+spread} ${y-h}" fill="none" stroke="#78b699" stroke-opacity=".13"/></g>`);
+// Layered SVG tulips: closed cups, translucent petal edges and lance-shaped leaves.
+export function gardenMarkup(idPrefix = "") {
+  const palettes = {
+    rose: ["#ffedf0", "#f4b6ce", "#d2789d", "#77395f"],
+    peach: ["#fff1e4", "#efc1ae", "#c78b83", "#8e5568"],
+    lilac: ["#f1edff", "#c4b5db", "#9785b7", "#51476d"],
+    cream: ["#fffce0", "#e6dfa5", "#b6b779", "#748251"],
+  };
+  const gradients = Object.entries(palettes)
+    .map(
+      ([name, c]) => `
+    <linearGradient id="${name}-back" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="${c[1]}"/><stop offset=".6" stop-color="${c[2]}"/><stop offset="1" stop-color="${c[3]}"/></linearGradient>
+    <linearGradient id="${name}-left" x1="0" y1="0" x2="1" y2=".7"><stop stop-color="${c[0]}"/><stop offset=".22" stop-color="${c[1]}"/><stop offset=".7" stop-color="${c[2]}"/><stop offset="1" stop-color="${c[3]}"/></linearGradient>
+    <linearGradient id="${name}-right" x1="1" y1="0" x2="0" y2="1"><stop stop-color="${c[0]}"/><stop offset=".3" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[3]}"/></linearGradient>
+    <linearGradient id="${name}-front" x1=".15" y1=".1" x2=".85" y2=".9"><stop stop-color="${c[0]}"/><stop offset=".18" stop-color="${c[1]}"/><stop offset=".43" stop-color="${c[1]}"/><stop offset=".75" stop-color="${c[2]}"/><stop offset="1" stop-color="${c[3]}"/></linearGradient>
+    <radialGradient id="${name}-sheen" cx=".2" cy=".2" r=".9"><stop stop-color="${c[0]}" stop-opacity=".5"/><stop offset=".52" stop-color="${c[0]}" stop-opacity=".08"/><stop offset="1" stop-color="${c[0]}" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${name}-halo"><stop stop-color="${c[1]}" stop-opacity=".13"/><stop offset="1" stop-color="${c[1]}" stop-opacity="0"/></radialGradient>`,
+    )
+    .join("");
+  function tulip({ x, y, height, angle, size, color, delay }) {
+    const c = palettes[color];
+    return `<g transform="translate(${x} ${y}) rotate(${angle})"><g class="tulip-sway" style="--wind:${7 + delay}s;--phase:-${delay * 3}s">
+      <g class="plant-grow" style="--delay:${delay}s">
+        <path d="M0 0C-12 -155,12 -${height * 0.65},0 -${height}" stroke="url(#stem)" stroke-width="7" stroke-linecap="round"/>
+        <path d="M-1 0C-9 -155,9 -${height * 0.65},-1 -${height}" stroke="#abd8a6" stroke-opacity=".28" stroke-width="1.2"/>
+        <g class="attached-leaf" style="--leaf-delay:${delay + 0.8}s;transform-origin:0px -${height * 0.28}px"><path d="M0 -${height * 0.28}C-28 -${height * 0.35},-97 -${height * 0.62},-81 -${height * 0.75}C-55 -${height * 0.66},-21 -${height * 0.57},0 -${height * 0.28}Z" fill="url(#leaf-light)"/><path d="M0 -${height * 0.28}Q-48 -${height * 0.52},-81 -${height * 0.75}" stroke="#bdd6a5" stroke-opacity=".17"/></g>
+        <g class="attached-leaf" style="--leaf-delay:${delay + 1.1}s;transform-origin:0px -${height * 0.46}px"><path d="M0 -${height * 0.46}C28 -${height * 0.52},82 -${height * 0.72},62 -${height * 0.84}C42 -${height * 0.75},12 -${height * 0.66},0 -${height * 0.46}Z" fill="url(#leaf-dark)"/><path d="M0 -${height * 0.46}Q42 -${height * 0.64},62 -${height * 0.84}" stroke="#b7d6ab" stroke-opacity=".2"/></g>
+      </g>
+      <g transform="translate(0 -${height}) scale(${size})"><g class="tulip-bloom" style="--delay:${delay + 1.6}s">
+        <ellipse class="bloom-aura" cx="0" cy="-65" rx="135" ry="154" fill="url(#${color}-halo)"/>
+        <path d="M-16 -6Q0 3 17 -7Q7 21 0 22Q-8 19 -16 -6Z" fill="#588657"/>
+        <path class="rear-petal" d="M-4 9C-37 -20,-48 -109,-24 -142C-10 -150,8 -127,14 -101C26 -125,41 -140,48 -132C65 -74,37 -7,-4 9Z" fill="url(#${color}-back)"/>
+        <g class="petal-unfurl petal-unfurl-left" style="--delay:${delay + 2}s"><path d="M0 12C-57 3,-76 -50,-68 -119C-49 -123,-5 -89,12 -53C22 -22,17 4,0 12Z" fill="url(#${color}-left)"/><path d="M-66 -118C-70 -57,-44 -12,-3 9" stroke="${c[0]}" stroke-width="1.2" stroke-opacity=".55"/><path d="M-57 -109Q-41 -57,-10 -8" stroke="${c[0]}" stroke-opacity=".12" stroke-width="2"/></g>
+        <g class="petal-unfurl petal-unfurl-right" style="--delay:${delay + 2.15}s"><path d="M0 12C58 4,77 -55,64 -123C42 -114,12 -94,-6 -48C-18 -22,-14 4,0 12Z" fill="url(#${color}-right)"/><path d="M63 -120C72 -55,46 -9,2 10" stroke="${c[0]}" stroke-width="1" stroke-opacity=".55"/></g>
+        <path class="front-petal" d="M0 14C-41 5,-48 -47,-34 -93C-23 -111,-8 -132,3 -128C25 -111,43 -87,43 -59C43 -14,24 10,0 14Z" fill="url(#${color}-front)"/>
+        <path d="M0 14C-41 5,-48 -47,-34 -93C-23 -111,-8 -132,3 -128C25 -111,43 -87,43 -59C43 -14,24 10,0 14Z" fill="url(#${color}-sheen)"/>
+        <path d="M-31 -93C-41 -58,-29 -10,-2 10" stroke="${c[0]}" stroke-opacity=".18" stroke-width="1.1"/>
+        <path d="M9 -116C19 -94,23 -44,13 -9M-6 -116C-18 -80,-16 -38,-8 -5M19 -100C33 -70,30 -42,22 -18" stroke="${c[0]}" stroke-opacity=".09" stroke-width=".65"/>
+        <path d="M3 -126C-8 -90,-7 -32,0 12" stroke="${c[0]}" stroke-opacity=".24" stroke-width="1.3"/>
+        <path d="M5 -124Q28 -99,37 -74" stroke="${c[0]}" stroke-opacity=".48" stroke-width="1"/>
+        <path d="M-22 -102Q-27 -56,-14 -12" stroke="${c[0]}" stroke-opacity=".12" stroke-width="1.5"/>
+      </g></g>
+    </g></g>`;
   }
-  const grasses = Array.from({length: 26}, (_,i) => {
-    const x = 205 + (i * 47) % 505, y = 886 + (i % 3) * 7;
-    const direction = i % 2 ? 1 : -1;
-    const h = 120 + (i * 71) % 340, w = direction * (25 + (i*31)%100);
-    return `<g class="grass-grow" style="--delay:${.8+i*.05}s;transform-origin:${x}px ${y}px"><path d="M${x} ${y} Q${x+w*.42} ${y-h*.78} ${x+w} ${y-h} Q${x+w*.16} ${y-h*.62} ${x+9} ${y}Z" fill="url(#grass)" opacity="${.35+(i%5)*.12}"/></g>`;
+  const plants = [
+    {
+      x: 433,
+      y: 940,
+      height: 380,
+      angle: -32,
+      size: 0.66,
+      color: "cream",
+      delay: 1.6,
+    },
+    {
+      x: 565,
+      y: 948,
+      height: 407,
+      angle: 34,
+      size: 0.63,
+      color: "rose",
+      delay: 1.85,
+    },
+    {
+      x: 468,
+      y: 945,
+      height: 482,
+      angle: -19,
+      size: 0.9,
+      color: "peach",
+      delay: 0.9,
+    },
+    {
+      x: 534,
+      y: 947,
+      height: 515,
+      angle: 21,
+      size: 0.95,
+      color: "lilac",
+      delay: 1.2,
+    },
+    {
+      x: 501,
+      y: 944,
+      height: 587,
+      angle: -1,
+      size: 1.04,
+      color: "rose",
+      delay: 0.5,
+    },
+  ];
+  const grass = Array.from({ length: 29 }, (_, i) => {
+    const x = 200 + ((i * 67) % 590),
+      y = 980 + (i % 4) * 8,
+      h = 125 + ((i * 71) % 320),
+      dx = (i % 2 ? 1 : -1) * (25 + ((i * 33) % 150));
+    return `<g class="reed-grow" style="--delay:${0.7 + i * 0.04}s;transform-origin:${x}px ${y}px"><path d="M${x} ${y}Q${x + dx * 0.3} ${y - h * 0.78} ${x + dx} ${y - h}Q${x + dx * 0.14} ${y - h * 0.6} ${x + 5} ${y}Z" fill="url(#reed)" opacity="${0.26 + (i % 4) * 0.12}"/></g>`;
   });
-  const flower = (x,y,scale,angle,delay) => `<g transform="translate(${x} ${y}) rotate(${angle}) scale(${scale})"><g class="flower-sway" style="--sway-delay:-${delay*2}s"><g class="stem-grow" style="--delay:${delay}s">
-    <path d="M0 0 C-13 -120,7 -280,0 -450" fill="none" stroke="url(#stem)" stroke-width="8" stroke-linecap="round"/>
-    <path class="stem-highlight" d="M-2 -20Q-6 -225 -2 -446" fill="none" stroke="#e6cb87" stroke-width="1" opacity=".4"/>
-    <g class="stem-leaf leaf-a"><path d="M-1 -144C-80 -145 -102 -208 -85 -214C-39 -213 -9 -188 -1 -144Z" fill="url(#leaf1)"/><path d="M-2 -145L-81 -208" stroke="#74b796" stroke-opacity=".2"/></g>
-    <g class="stem-leaf leaf-b"><path d="M0 -213C62 -215 91 -266 80 -280C36 -273 10 -246 0 -213Z" fill="url(#leaf0)"/><path d="M1 -215L76 -274" stroke="#74b796" stroke-opacity=".2"/></g>
-    <g class="stem-leaf leaf-c"><path d="M-1 -295C-59 -299 -74 -337 -65 -349C-24 -341 -9 -324 -1 -295Z" fill="url(#leaf2)"/></g>
-    <g class="stem-leaf leaf-d"><path d="M0 -350C39 -351 61 -388 53 -394C20 -387 5 -368 0 -350Z" fill="url(#leaf0)"/></g>
-  </g>
-  <g transform="translate(0 -450)"><g class="bloom" style="--delay:${delay+1.7}s">
-    <ellipse class="flower-halo" cy="-20" rx="81" ry="48" fill="url(#halo)"/>
-    <path class="petal petal-back" d="M0 1C-21 -13 -39 -65 -17 -74C12 -84 23 -34 0 1Z" fill="url(#petalBack)"/>
-    <path class="petal petal-back" d="M1 3C7 -39 34 -73 51 -57C64 -40 34 -8 1 3Z" fill="url(#petalBack)"/>
-    <path class="petal petal-left" d="M0 10C-27 9 -91 -23 -79 -45C-65 -69 -20 -34 0 10Z" fill="url(#petalLeft)"/>
-    <path d="M-77 -45Q-55 -60 -7 2" fill="none" stroke="#ffdaec" stroke-opacity=".5" stroke-width="1.1"/>
-    <path class="petal petal-right" d="M-1 10C32 7 87 -28 72 -46C52 -63 16 -28 -1 10Z" fill="url(#petalRight)"/>
-    <path d="M72 -45Q54 -58 7 3" fill="none" stroke="#ffe0ed" stroke-opacity=".45" stroke-width="1.1"/>
-    <ellipse cy="7" rx="31" ry="10" fill="#efcf85"/>
-    <ellipse cy="5" rx="25" ry="6" fill="#fff4c7"/>
-    <path class="petal petal-front" d="M-37 4Q-1 15 36 3C21 35 -21 36 -37 4Z" fill="url(#petalFront)"/>
-    <path d="M-35 5Q0 18 34 4" fill="none" stroke="#ffdaeb" stroke-width="1.5"/>
-    <ellipse cy="9" rx="15" ry="3" fill="#fff8d6" opacity=".7"/>
-  </g></g></g></g>`;
-  return `<svg class="garden" viewBox="0 0 900 920" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="stem" x1="0" y1="0" x2="-20" y2="-450" gradientUnits="userSpaceOnUse"><stop stop-color="#0b342e"/><stop offset=".48" stop-color="#569b62"/><stop offset="1" stop-color="#a8aa6b"/></linearGradient>
-    <linearGradient id="leaf0" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#55af80"/><stop offset=".42" stop-color="#167455"/><stop offset="1" stop-color="#022c29"/></linearGradient>
-    <linearGradient id="leaf1" x1="1" y1="0" x2="0" y2="1"><stop stop-color="#5eae7e"/><stop offset=".45" stop-color="#13724d"/><stop offset="1" stop-color="#032c27"/></linearGradient>
-    <linearGradient id="leaf2" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#48977b"/><stop offset=".5" stop-color="#135f50"/><stop offset="1" stop-color="#041d21"/></linearGradient>
-    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6ac77e"/><stop offset=".5" stop-color="#228956"/><stop offset="1" stop-color="#051b20"/></linearGradient>
-    <linearGradient id="petalBack" x2=".4" y2="1"><stop stop-color="#f3b4d3"/><stop offset=".55" stop-color="#d96ba6"/><stop offset="1" stop-color="#9e427b"/></linearGradient>
-    <linearGradient id="petalLeft" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f6b3d3"/><stop offset=".45" stop-color="#df8abb"/><stop offset="1" stop-color="#b55191"/></linearGradient>
-    <linearGradient id="petalRight" x1="1" y1="0" x2="0" y2="1"><stop stop-color="#ffd0e6"/><stop offset=".5" stop-color="#e596c3"/><stop offset="1" stop-color="#bc5a98"/></linearGradient>
-    <linearGradient id="petalFront" x2="0" y2="1"><stop stop-color="#f2b9d6"/><stop offset="1" stop-color="#ae4d87"/></linearGradient>
-    <radialGradient id="halo"><stop stop-color="#e996c3" stop-opacity=".13"/><stop offset="1" stop-color="#e996c3" stop-opacity="0"/></radialGradient>
-    <radialGradient id="ground"><stop stop-color="#237b65" stop-opacity=".19"/><stop offset="1" stop-color="#062020" stop-opacity="0"/></radialGradient>
-  </defs>
-  <ellipse cx="450" cy="864" rx="330" ry="92" fill="url(#ground)"/>
-  <g class="back-grass">${grasses.slice(0,13).join('')}</g>
-  ${flower(447,830,1.05,1,.9)}
-  ${flower(418,843,.8,-18,1.25)}
-  ${flower(485,849,.87,19,1.5)}
-  <g class="foliage">${leaves.join('')}</g>
-  <g class="front-grass">${grasses.slice(13).join('')}</g>
-  </svg>`;
+  const leaves = Array.from({ length: 12 }, (_, i) => {
+    const x = 445 + Math.sin(i * 3) * 80,
+      y = 950 + (i % 3) * 10,
+      h = 160 + ((i * 43) % 175),
+      side = i % 2 ? 1 : -1,
+      dx = side * (30 + ((i * 23) % 95));
+    return `<g class="ground-leaf" style="--delay:${1 + i * 0.07}s;transform-origin:${x}px ${y}px"><g class="leaf-breathe" style="--phase:-${i * 0.8}s;transform-origin:${x}px ${y}px"><path d="M${x} ${y}C${x + dx * 0.7} ${y - h * 0.2},${x + dx * 1.3} ${y - h * 0.65},${x + dx} ${y - h}C${x + dx * 0.12} ${y - h * 0.8},${x - dx * 0.35} ${y - h * 0.23},${x} ${y}Z" fill="url(#${i % 2 ? "leaf-dark" : "leaf-light"})"/><path d="M${x} ${y}Q${x + dx * 0.25} ${y - h * 0.53} ${x + dx} ${y - h}" stroke="#b6cead" stroke-opacity=".16" stroke-width="1"/></g></g>`;
+  }).join("");
+  const markup = `<svg class="garden" viewBox="0 0 1000 1030" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>${gradients}
+    <linearGradient id="stem" x1="0" y1="0" x2="-10" y2="-550" gradientUnits="userSpaceOnUse"><stop stop-color="#143c35"/><stop offset=".45" stop-color="#709f78"/><stop offset="1" stop-color="#a3b383"/></linearGradient>
+    <linearGradient id="leaf-light" x1="0" y1=".5" x2="1" y2=".7"><stop stop-color="#0e3738"/><stop offset=".4" stop-color="#547f69"/><stop offset=".55" stop-color="#79a28a"/><stop offset=".62" stop-color="#436d5c"/><stop offset="1" stop-color="#0e3537"/></linearGradient>
+    <linearGradient id="leaf-dark" x1="1" y1="0" x2="0" y2=".7"><stop stop-color="#89ac8d"/><stop offset=".35" stop-color="#426f60"/><stop offset=".65" stop-color="#224f47"/><stop offset="1" stop-color="#082b30"/></linearGradient>
+    <linearGradient id="reed" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#84b695"/><stop offset=".4" stop-color="#477b68"/><stop offset="1" stop-color="#0a242a"/></linearGradient>
+    <radialGradient id="ground"><stop stop-color="#60956b" stop-opacity=".22"/><stop offset="1" stop-color="#60956b" stop-opacity="0"/></radialGradient>
+  </defs><ellipse cx="500" cy="960" rx="370" ry="100" fill="url(#ground)"/>
+  <g class="back-reeds">${grass.slice(0, 25).join("")}</g>${plants.map(tulip).join("")}
+  <g class="ground-leaves">${leaves}</g><g class="front-reeds">${grass.slice(25).join("")}</g></svg>`;
+  return idPrefix
+    ? markup
+        .replace(/id="/g, `id="${idPrefix}`)
+        .replace(/url\(#/g, `url(#${idPrefix}`)
+    : markup;
 }

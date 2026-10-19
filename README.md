@@ -1,51 +1,64 @@
-# Một vườn hoa dành cho em
+# Một vườn tulip gửi bạn
 
-Web quà tặng toàn màn hình, dựng bằng HTML, CSS, JavaScript thuần và Vite. Ba bông hoa SVG mọc và nở lần lượt trên nền đêm; ảnh kỷ niệm, lời nhắn và đom đóm xuất hiện quanh hoa. Không dùng framework hoặc thư viện 3D.
+Web lời chúc dành cho bạn bè: năm bông tulip hồng, đào, tím và kem trên nền đêm. Không có ảnh kỷ niệm hoặc nội dung dành cho người yêu. HTML, CSS, JavaScript thuần, SVG và Canvas; chạy bằng Vite.
 
-## Chạy ở máy
+## Chạy tại máy
 
 ```sh
 npm install
 npm run dev
 ```
 
-Mở địa chỉ Vite in ra (mặc định http://127.0.0.1:5175/). Build bản tĩnh bằng `npm run build`, kiểm tra bằng `npm run preview`. Thư mục xuất bản là `dist/`. Cần phục vụ bằng HTTP, không mở index.html bằng file://.
+Mở http://127.0.0.1:5175/. Trên Windows có thể bấm đúp **start-local.cmd** thay vì nhập lệnh. Giữ cửa sổ terminal mở khi xem web, Ctrl+C để dừng. Nếu cổng 5175 đã có bản xem trước đang chạy, chỉ cần mở link đó.
 
-## Cá nhân hóa
+Build bằng `npm run build`, xem bản build bằng `npm run preview`. Thư mục đầu ra: `dist/`.
 
-Chỉnh `src/config.js`:
+## Thư mục dự án
 
-- `sender`, `recipient`: người gửi và người nhận.
-- `letterTitle`, `letter`: tiêu đề và các đoạn thư.
-- `messages`: lời nhắn mặc định, mỗi phần tử là một câu.
-- `symbol`: `heart`, `flower`, hoặc `star`.
-- `photos`: đường dẫn, chú thích, mô tả thay thế cho từng ảnh.
-- `music`: đường dẫn nhạc nền.
+Toàn bộ bản hoàn chỉnh nằm trong **tulip-garden/**:
 
-Thay năm ảnh `public/media/memory-1.jpg` đến `memory-5.jpg` bằng ảnh của bạn, hoặc chỉnh đường dẫn trong cấu hình. Nên dùng JPEG/WebP nhỏ hơn 500 KB, ảnh dọc hoặc vuông. Ảnh hiện tại là phong cảnh mẫu từ Unsplash, không phải ảnh của người dùng. Danh sách nguồn nằm trong `public/media/SOURCES.md`.
+- `src/`: mã nguồn giao diện, hoa và hiệu ứng.
+- `public/`: nhạc và tài nguyên tĩnh.
+- `scripts/`: công cụ tạo nhạc mẫu.
+- `docs/preview.png`: ảnh chụp bản hoàn chỉnh.
+- `start-local.cmd`: mở server local trên Windows.
+- `vercel.json`: cấu hình build và hosting Vercel.
 
-Thay `public/media/garden-piano.wav` bằng nhạc bạn có quyền sử dụng, hoặc thay `music` để trỏ tới file MP3 của bạn trong public/media. File WAV hiện có là đoạn nhạc tổng hợp gốc được tạo bằng `node scripts/make-music.mjs`, không phải bản thu hay bài hát trong video TikTok. Nhạc chỉ phát sau khi mở quà hoặc nhấn nút nhạc; lỗi tải/phát nhạc không ngăn sử dụng web.
+`node_modules/` là thư viện đã cài, `dist/` là kết quả build. Hai thư mục này có thể tạo lại bằng `npm ci` và `npm run build`. Các thư mục ẩn `.git/` và `.vercel/` giữ lịch sử mã nguồn và liên kết dự án Vercel.
 
-`src/garden.js` chứa hình học hoa/lá/cỏ; `src/style.css` chứa bố cục, màu và hoạt cảnh. Nội dung được render qua escape/textContent để lời nhắn không trở thành HTML thực thi.
+## Đưa lên Vercel
 
-## Sử dụng
+Đã có `vercel.json` khai báo Vite, lệnh build và thư mục `dist`.
 
-- Nhấn **Mở quà** để bắt đầu. Hoa nở trong khoảng 5 giây, sau đó hiện ảnh và lời nhắn.
-- Nút **+** góc trái mở thư, thư viện ảnh, nhạc và cài đặt.
-- Bấm ảnh để xem lớn, dùng nút ảnh trước/sau để chuyển ảnh.
-- Cài đặt cho phép chọn biểu tượng và viết tối đa 12 câu, mỗi câu không quá 100 ký tự.
-- Cài đặt lưu trong localStorage của trình duyệt hiện tại. Để gửi nội dung mặc định cho người khác, sửa config và build lại; cài đặt trên máy bạn không đồng bộ sang máy người nhận.
-- Escape hoặc nút đóng để đóng modal. Dialog giữ focus và trả focus về nút đã mở.
-- Chạm vùng trống để tạo hạt sáng.
+1. Import thư mục/repository này vào Vercel.
+2. Chọn Framework Preset: Vite; Build Command: `npm run build`; Output Directory: `dist`.
+3. Không cần biến môi trường, tài khoản cho khách xem hoặc cơ sở dữ liệu.
 
-Mobile giảm số ảnh và hạt sáng; không cắt ba bông hoa chính. Chế độ giảm chuyển động hiển thị hoa tĩnh. Khi tab ẩn, Canvas, CSS animation và nhạc tạm dừng. Font và ảnh đều được phục vụ cục bộ, không gọi CDN lúc xem.
+Hoặc dùng CLI trong thư mục dự án:
 
-## Xuất bản
+```sh
+npx vercel
+```
 
-`npm run build` tạo web tĩnh trong `dist/`, có thể dùng với hosting tĩnh. `.openai/hosting.json` khai báo bản Sites riêng tư; không đổi `project_id` khi cập nhật.
+Dự án đã được liên kết với Vercel. Bản nâng cấp hiện được chạy local để xem trước; cấu hình Vercel vẫn có sẵn để xuất bản sau.
 
-## Tài nguyên
+## Chỉnh lời chúc
 
-- Font Be Vietnam Pro và Cormorant Garamond: SIL Open Font License, giấy phép trong các gói @fontsource.
-- Icons: Tabler Icons, MIT.
-- Nhạc mẫu: được tổng hợp riêng cho dự án, không lấy bản ghi âm bên ngoài.
+Sửa `src/config.js`: `heading`, `emphasis`, `subtitle`, `wishes` và `greeting`. Nội dung mặc định là lời chúc vui vẻ, bình an và may mắn. Không dùng dữ liệu localStorage từ phiên bản cũ.
+
+Đổi `music` sang đường dẫn file MP3/WAV bạn có quyền sử dụng, đặt trong `public/media/`. File `garden-piano.wav` hiện có là nhạc tổng hợp gốc, tạo bằng `node scripts/make-music.mjs`. Không lấy bản ghi âm từ video tham chiếu. Nhạc chỉ phát sau khi nhấn Ghé khu vườn hoặc nút nhạc; lỗi nhạc không ngăn ngắm hoa.
+
+## Hiệu ứng và tương tác
+
+- Thân và lá phát triển theo từng lớp, cánh tulip mở lần lượt.
+- Hoa và lá đung đưa lệch nhịp; cánh có gân mảnh, bắt sáng mềm và vùng tối tạo chiều sâu.
+- Sao lấp lánh, đom đóm, cánh hoa trôi, sương và sao băng thưa.
+- Trăng khuyết, sương chân hoa và nền sáng nhẹ tạo chiều sâu.
+- Rê chuột tạo chiều sâu và thu hút đom đóm gần con trỏ; chạm vùng trống tạo cụm hạt sáng cùng gợn sáng.
+- Xem hoa nở: phát lại hoạt cảnh. Đọc lời chúc: mở lời chúc ngắn, Escape để đóng.
+- Bật/tắt nhạc ở góc phải. Khi chuyển tab, nhạc và chuyển động tạm dừng.
+- Mobile giảm hạt, giữ trọn cụm tulip và hiển thị từng lời chúc lần lượt; hỗ trợ prefers-reduced-motion và màn hình ngang.
+
+Hình hoa nằm trong `src/garden.js`, bố cục và hoạt cảnh trong `src/style.css`, tương tác và Canvas trong `src/main.js`. Tài nguyên được phục vụ cục bộ, không cần CDN lúc xem.
+
+Font Be Vietnam Pro và Cormorant Garamond: SIL Open Font License. Icons Tabler: MIT. SVG hoa và âm thanh mẫu được tạo riêng cho dự án.

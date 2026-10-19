@@ -1,0 +1,11 @@
+.git
+.openai
+node_modules
+dist
+scripts
+docs
+start-local.cmd
+*.zip
+*.tar.gz
+*.tgz
+.env*
